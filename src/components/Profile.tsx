@@ -4,12 +4,26 @@ import { DEVOPS_BRANCHES } from '../constants';
 import { CertificateCard } from './Certificate';
 import { Award, Zap, Trophy, Medal } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { User } from 'firebase/auth';
 
 interface ProfileProps {
   progress: UserProgress;
+  user: User | null;
 }
 
-export default function Profile({ progress }: ProfileProps) {
+export default function Profile({ progress, user }: ProfileProps) {
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+          <Award className="w-10 h-10 text-blue-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to view your profile</h2>
+        <p className="text-gray-500 mb-6">Track your progress and earn verified certificates.</p>
+      </div>
+    );
+  }
+
   const completedModules = DEVOPS_BRANCHES.filter(module => 
     module.lessons.every(lesson => progress.completedLessons.includes(lesson.id))
   );
@@ -23,17 +37,17 @@ export default function Profile({ progress }: ProfileProps) {
   return (
     <div className="max-w-4xl mx-auto py-12 px-6">
       <div className="flex items-center gap-6 mb-12">
-         <div className="w-24 h-24 rounded-full bg-blue-100 p-1 border-4 border-white shadow-xl relative">
+         <div className="w-24 h-24 rounded-full bg-blue-100 p-1 border-4 border-white shadow-xl relative overflow-hidden">
             <img 
-              src="https://api.dicebear.com/7.x/bottts/svg?seed=devops" 
+              src={user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`} 
               alt="Profile" 
-              className="w-full h-full rounded-full"
+              className="w-full h-full object-cover"
             />
             <div className="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-white" />
          </div>
          <div>
-            <h1 className="text-3xl font-black text-gray-900">Keshav Owhal</h1>
-            <p className="text-gray-500">Junior Cloud Engineer • Member since May 2026</p>
+            <h1 className="text-3xl font-black text-gray-900">{user.displayName}</h1>
+            <p className="text-gray-500">{user.email} • DevOps Learner</p>
          </div>
       </div>
 

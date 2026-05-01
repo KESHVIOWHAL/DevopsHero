@@ -9,7 +9,7 @@ import { Lesson } from './constants';
 import { cn } from './lib/utils';
 
 export default function App() {
-  const { progress, completeLesson } = useProgress();
+  const { progress, user, loading, completeLesson } = useProgress();
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [activeTab, setActiveTab] = useState('learn');
 
@@ -21,7 +21,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
-      <TopNav progress={progress} />
+      <TopNav progress={progress} user={user} loading={loading} />
       
       <div className="flex">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -58,7 +58,7 @@ export default function App() {
                  animate={{ opacity: 1, x: 0 }}
                  exit={{ opacity: 0, x: -20 }}
                >
-                 <Profile progress={progress} />
+                 <Profile progress={progress} user={user} />
                </motion.div>
              ) : (
                <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">

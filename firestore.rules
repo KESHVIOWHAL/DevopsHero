@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProgress(data) {
+      return data.keys().hasAll(['completedLessons', 'points', 'streak', 'lastActive']) 
+          && data.completedLessons is list
+          && data.points is number
+          && data.streak is number
+          && (data.lastActive is string || data.lastActive is timestamp)
+          && data.keys().size() <= 10;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      // For the leaderboard, if we were to implement it
+      allow list: if isSignedIn() && request.query.limit <= 10;
+      
+      allow create: if isOwner(userId) 
+                    && isValidUserProgress(incoming())
+                    && incoming().points == 0; // Starting fresh
+      
+      allow update: if isOwner(userId) 
+                    && isValidUserProgress(incoming())
+                    && (
+                      incoming().diff(existing()).affectedKeys().hasOnly(['completedLessons', 'points', 'streak', 'lastActive', 'displayName', 'photoURL'])
+                    );
+    }
+  }
+}

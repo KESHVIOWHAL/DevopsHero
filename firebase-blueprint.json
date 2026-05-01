@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "UserProgress": {
+      "title": "User Progress",
+      "description": "Stores user's learning progress and stats",
+      "type": "object",
+      "properties": {
+        "completedLessons": {
+          "type": "array",
+          "description": "IDs of completed lessons"
+        },
+        "points": {
+          "type": "number",
+          "description": "Total XP earned"
+        },
+        "streak": {
+          "type": "number",
+          "description": "Current learning streak"
+        },
+        "lastActive": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last activity"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "photoURL": {
+          "type": "string"
+        }
+      },
+      "required": ["completedLessons", "points", "streak", "lastActive"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProgress",
+      "description": "User profile and progress"
+    }
+  }
+}
