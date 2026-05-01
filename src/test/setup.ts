@@ -8,6 +8,8 @@ vi.mock('firebase/app', () => ({
 
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
+  GoogleAuthProvider: vi.fn(() => ({})),
+  signInWithPopup: vi.fn(),
   onAuthStateChanged: vi.fn((auth, cb) => {
     cb(null); // Default to logged out
     return vi.fn();
