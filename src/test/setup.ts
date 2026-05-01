@@ -10,8 +10,9 @@ vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
   GoogleAuthProvider: vi.fn(function() { return {}; }),
   signInWithPopup: vi.fn(),
-  onAuthStateChanged: vi.fn((auth, cb) => {
-    cb(null); // Default to logged out
+  onAuthStateChanged: vi.fn(() => {
+    // Return unsubscribe function directly, do NOT call cb immediately
+    // so loading stays true on initial render
     return vi.fn();
   }),
 }));
@@ -20,5 +21,5 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
   doc: vi.fn(),
   setDoc: vi.fn(),
-  onSnapshot: vi.fn(),
+  onSnapshot: vi.fn(() => vi.fn()),
 }));
