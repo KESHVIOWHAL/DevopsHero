@@ -5,6 +5,7 @@ import { TopNav, Sidebar } from './components/Navigation';
 import Pathway from './components/Pathway';
 import LessonModal from './components/LessonModal';
 import Profile from './components/Profile';
+import Practice from './components/Practice';
 import { Lesson } from './constants';
 import { cn } from './lib/utils';
 
@@ -50,6 +51,15 @@ export default function App() {
                     progress={progress} 
                     onSelectLesson={(lesson) => setSelectedLesson(lesson)} 
                   />
+               </motion.div>
+             ) : activeTab === 'practice' ? (
+               <motion.div
+                 key="practice"
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 exit={{ opacity: 0, x: -20 }}
+               >
+                 <Practice onEarnPoints={(pts) => completeLesson('practice-' + Date.now(), pts)} />
                </motion.div>
              ) : activeTab === 'profile' ? (
                <motion.div
