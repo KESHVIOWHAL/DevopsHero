@@ -1,18 +1,19 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import confetti from 'canvas-confetti';
 import { X, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
-import { Lesson, QuizQuestion } from '../constants';
+import { Lesson, QuizQuestion, DEVOPS_BRANCHES } from '../constants';
 import { cn } from '../lib/utils';
 
 interface LessonModalProps {
   lesson: Lesson;
   onClose: () => void;
   onComplete: (points: number) => void;
+  onNextLesson?: (nextLesson: Lesson) => void;
 }
 
-export default function LessonModal({ lesson, onClose, onComplete }: LessonModalProps) {
+export default function LessonModal({ lesson, onClose, onComplete, onNextLesson }: LessonModalProps) {
   const [step, setStep] = useState<'content' | 'quiz' | 'result'>('content');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -20,6 +21,34 @@ export default function LessonModal({ lesson, onClose, onComplete }: LessonModal
   const [score, setScore] = useState(0);
 
   const currentQuestion = lesson.quiz[currentQuestionIndex];
+
+  // Reset state when lesson changes
+  useEffect(() => {
+    setStep('content');
+    setCurrentQuestionIndex(0);
+    setSelectedOption(null);
+    setIsAnswered(false);
+    setScore(0);
+  }, [lesson.id]);
+
+  const getNextLesson = (): Lesson | null => {
+    for (let moduleIdx = 0; moduleIdx < DEVOPS_BRANCHES.length; moduleIdx++) {
+      const module = DEVOPS_BRANCHES[moduleIdx];
+      const lessonIndex = module.lessons.findIndex(l => l.id === lesson.id);
+      
+      if (lessonIndex !== -1) {
+        // Found the lesson, now look for the next one
+        if (lessonIndex < module.lessons.length - 1) {
+          // Next lesson in the same module
+          return module.lessons[lessonIndex + 1];
+        } else if (moduleIdx < DEVOPS_BRANCHES.length - 1) {
+          // First lesson of the next module
+          return DEVOPS_BRANCHES[moduleIdx + 1].lessons[0];
+        }
+      }
+    }
+    return null;
+  };
 
   const handleAnswer = () => {
     if (selectedOption === null) return;
@@ -48,8 +77,26 @@ export default function LessonModal({ lesson, onClose, onComplete }: LessonModal
   };
 
   const handleFinish = () => {
+    const nextLesson = getNextLesson();
+    console.log('Lesson finished, score:', score, 'nextLesson:', nextLesson);
     onComplete(score * 10);
-    onClose();
+    
+    if (nextLesson && onNextLesson) {
+      // Automatically open the next lesson
+      console.log('Opening next lesson:', nextLesson.id);
+      onNextLesson(nextLesson);
+    } else {
+      console.log('No next lesson, closing modal');
+      onClose();
+    }
+  };
+
+  const handleContinueToNext = () => {
+    const nextLesson = getNextLesson();
+    if (nextLesson && onNextLesson) {
+      onComplete(score * 10);
+      onNextLesson(nextLesson);
+    }
   };
 
   return (
@@ -201,12 +248,22 @@ export default function LessonModal({ lesson, onClose, onComplete }: LessonModal
             </button>
           )}
           {step === 'result' && (
-            <button
-              onClick={handleFinish}
-              className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all shadow-lg"
-            >
-              Finish
-            </button>
+            <div className="flex gap-3">
+              {getNextLesson() && onNextLesson && (
+                <button
+                  onClick={handleContinueToNext}
+                  className="px-8 py-3 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 transition-all shadow-lg flex items-center gap-2"
+                >
+                  Next Lesson <ArrowRight className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={handleFinish}
+                className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all shadow-lg"
+              >
+                {getNextLesson() ? 'Close' : 'Finish'}
+              </button>
+            </div>
           )}
         </div>
       </motion.div>

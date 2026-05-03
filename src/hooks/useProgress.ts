@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { auth, db, getMockUser } from '../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
 export interface UserProgress {
@@ -49,13 +49,23 @@ export function useProgress() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for mock user first
+    const mockUser = getMockUser();
+    if (mockUser) {
+      setUser(mockUser as any);
+      setLoading(false);
+      const localProgress = JSON.parse(localStorage.getItem('devops-progress') || '{"completedLessons":[],"points":0,"streak":0,"lastActive":null}');
+      setProgress(localProgress);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (!u) {
         setLoading(false);
-        // If logged out, reset or use local? 
-        // For now, let's just stick to default progress when logged out
-        setProgress(DEFAULT_PROGRESS);
+        // Load from localStorage for non-logged in users
+        const localProgress = JSON.parse(localStorage.getItem('devops-progress') || '{"completedLessons":[],"points":0,"streak":0,"lastActive":null}');
+        setProgress(localProgress);
       }
     });
     return () => unsubscribe();
@@ -90,12 +100,50 @@ export function useProgress() {
   }, [user]);
 
   const completeLesson = async (lessonId: string, points: number) => {
-    if (!user) {
-      // Local fallback? For now, we require log in to track progress properly in this "backend" version
+    console.log('completeLesson called:', { lessonId, points, user: !!user });
+    
+    // Check for mock user
+    const mockUser = getMockUser();
+    if (mockUser) {
+      console.log('Using mock user system');
+      const localProgress = JSON.parse(localStorage.getItem('devops-progress') || '{"completedLessons":[],"points":0,"streak":0,"lastActive":null}');
+      console.log('Local progress before:', localProgress);
+      
+      if (!localProgress.completedLessons.includes(lessonId)) {
+        localProgress.completedLessons.push(lessonId);
+        localProgress.points += points;
+        localProgress.lastActive = new Date().toDateString();
+        localStorage.setItem('devops-progress', JSON.stringify(localProgress));
+        setProgress(localProgress);
+        console.log('Local progress after:', localProgress);
+      } else {
+        console.log('Lesson already completed:', lessonId);
+      }
       return;
     }
 
-    if (progress.completedLessons.includes(lessonId)) return;
+    if (!user) {
+      // Local fallback for non-logged in users
+      const localProgress = JSON.parse(localStorage.getItem('devops-progress') || '{"completedLessons":[],"points":0,"streak":0,"lastActive":null}');
+      console.log('Local progress before:', localProgress);
+      
+      if (!localProgress.completedLessons.includes(lessonId)) {
+        localProgress.completedLessons.push(lessonId);
+        localProgress.points += points;
+        localProgress.lastActive = new Date().toDateString();
+        localStorage.setItem('devops-progress', JSON.stringify(localProgress));
+        setProgress(localProgress);
+        console.log('Local progress after:', localProgress);
+      } else {
+        console.log('Lesson already completed:', lessonId);
+      }
+      return;
+    }
+
+    if (progress.completedLessons.includes(lessonId)) {
+      console.log('Lesson already completed in Firebase:', lessonId);
+      return;
+    }
 
     const today = new Date().toDateString();
     const isNewStreak = progress.lastActive && progress.lastActive !== today;
@@ -108,10 +156,19 @@ export function useProgress() {
       lastActive: today,
     };
 
+    console.log('Firebase progress update:', { lessonId, points, updatedProgress });
+
     try {
       await setDoc(doc(db, 'users', user.uid), updatedProgress);
+      // Also save to localStorage as backup
+      localStorage.setItem('devops-progress', JSON.stringify(updatedProgress));
+      console.log('Firebase save successful');
     } catch (err) {
+      console.log('Firebase save failed, using fallback:', err);
       handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
+      // Fallback to localStorage if Firebase fails
+      localStorage.setItem('devops-progress', JSON.stringify(updatedProgress));
+      setProgress(updatedProgress);
     }
   };
 

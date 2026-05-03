@@ -6,7 +6,8 @@ import Pathway from './components/Pathway';
 import LessonModal from './components/LessonModal';
 import Profile from './components/Profile';
 import Practice from './components/Practice';
-import { Lesson } from './constants';
+import CourseCompletion from './components/CourseCompletion';
+import { Lesson, DEVOPS_BRANCHES } from './constants';
 import { cn } from './lib/utils';
 
 export default function App() {
@@ -16,8 +17,47 @@ export default function App() {
 
   const handleComplete = (earnedPoints: number) => {
     if (selectedLesson) {
+      console.log('Completing lesson:', selectedLesson.id, 'with points:', earnedPoints);
       completeLesson(selectedLesson.id, earnedPoints);
     }
+  };
+
+  const handleNextLesson = (nextLesson: Lesson) => {
+    setSelectedLesson(nextLesson);
+  };
+
+  // Check if all lessons are completed
+  const totalLessons = 10;
+  const allLessonsCompleted = progress.completedLessons.length === totalLessons;
+  
+  // Debug logging
+  console.log('Course Completion Debug:', {
+    completedLessons: progress.completedLessons.length,
+    totalLessons,
+    allLessonsCompleted,
+    completedLessonIds: progress.completedLessons
+  });
+
+  // Temporary debug function to test completion
+  const handleCompleteAllLessons = () => {
+    const allLessonIds = [
+      'devops-overview', 
+      'devops-evolution', 
+      'vcs-intro', 
+      'github-collab',
+      'jenkins-intro',
+      'jenkins-pipelines',
+      'docker-intro',
+      'k8s-intro',
+      'terraform-intro',
+      'sre-foundations'
+    ];
+    
+    allLessonIds.forEach(lessonId => {
+      if (!progress.completedLessons.includes(lessonId)) {
+        completeLesson(lessonId, 100);
+      }
+    });
   };
 
   return (
@@ -25,7 +65,7 @@ export default function App() {
       <TopNav progress={progress} user={user} loading={loading} />
       
       <div className="flex">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} progress={progress} />
         
         <main className="flex-1 min-h-[calc(100vh-73px)]">
            <AnimatePresence mode="wait">
@@ -37,20 +77,56 @@ export default function App() {
                  exit={{ opacity: 0, x: -20 }}
                  className="max-w-4xl mx-auto px-6 py-12"
                >
-                  <header className="mb-12 text-center">
-                     <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4 tracking-tight">
-                        Master the <span className="text-blue-600">DevOps</span> Life.
-                     </h1>
-                     <p className="text-gray-500 text-lg max-w-xl mx-auto">
-                        Level up your career with bite-sized lessons and interactive challenges. 
-                        From Docker to Kubernetes, become a DevOps Hero.
-                     </p>
-                  </header>
+                  <>
+                      {/* Show certificate if course is completed */}
+                      {allLessonsCompleted && (
+                        <div className="mb-12">
+                          <CourseCompletion 
+                            progress={progress} 
+                            userName={user?.displayName || user?.email || 'DevOps Hero'}
+                          />
+                        </div>
+                      )}
 
-                  <Pathway 
-                    progress={progress} 
-                    onSelectLesson={(lesson) => setSelectedLesson(lesson)} 
-                  />
+                      <header className="mb-12 text-center">
+                         <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4 tracking-tight">
+                            Master the <span className="text-blue-600">DevOps</span> Life.
+                         </h1>
+                         <p className="text-gray-500 text-lg max-w-xl mx-auto">
+                            Level up your career with bite-sized lessons and interactive challenges. 
+                            From Docker to Kubernetes, become a DevOps Hero.
+                         </p>
+                         {allLessonsCompleted && (
+                           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-2xl">
+                             <p className="text-green-700 font-semibold">🎉 Course Completed! You can review any lesson below.</p>
+                           </div>
+                         )}
+                         {/* Debug buttons - remove in production */}
+                         <div className="flex gap-2 justify-center mt-4">
+                           <button 
+                             onClick={handleCompleteAllLessons}
+                             className="px-4 py-2 bg-red-500 text-white rounded-full text-sm"
+                           >
+                             DEBUG: Complete All Lessons
+                           </button>
+                           <button 
+                             onClick={() => {
+                               console.log('Current progress:', progress);
+                               console.log('Completed lessons:', progress.completedLessons);
+                               console.log('Lesson count:', progress.completedLessons.length);
+                             }}
+                             className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm"
+                           >
+                             Check Progress
+                           </button>
+                         </div>
+                      </header>
+
+                      <Pathway 
+                        progress={progress} 
+                        onSelectLesson={(lesson) => setSelectedLesson(lesson)} 
+                      />
+                    </>
                </motion.div>
              ) : activeTab === 'practice' ? (
                <motion.div
@@ -132,6 +208,7 @@ export default function App() {
             lesson={selectedLesson}
             onClose={() => setSelectedLesson(null)}
             onComplete={handleComplete}
+            onNextLesson={handleNextLesson}
           />
         )}
       </AnimatePresence>
