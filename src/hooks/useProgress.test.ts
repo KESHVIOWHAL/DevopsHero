@@ -4,9 +4,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock Firebase modules before importing useProgress
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn(),
-  GoogleAuthProvider: vi.fn().mockImplementation(() => ({
-    setCustomParameters: vi.fn()
-  })),
+  GoogleAuthProvider: vi.fn(function() {
+    this.setCustomParameters = vi.fn();
+  }),
   getAuth: vi.fn(() => ({ currentUser: null }))
 }));
 
