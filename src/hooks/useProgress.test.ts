@@ -6,7 +6,8 @@ vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn(),
   GoogleAuthProvider: vi.fn().mockImplementation(() => ({
     setCustomParameters: vi.fn()
-  }))
+  })),
+  getAuth: vi.fn(() => ({ currentUser: null }))
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -17,7 +18,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/app', () => ({
-  initializeApp: vi.fn()
+  initializeApp: vi.fn(() => ({ name: 'test-app' }))
 }));
 
 // Import the mocked modules for use in tests
