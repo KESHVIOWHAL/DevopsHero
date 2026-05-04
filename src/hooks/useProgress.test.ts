@@ -1,8 +1,26 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock Firebase modules before importing useProgress
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn(),
+  GoogleAuthProvider: vi.fn().mockImplementation(() => ({
+    setCustomParameters: vi.fn()
+  }))
+}));
+
+vi.mock('firebase/firestore', () => ({
+  onSnapshot: vi.fn(),
+  setDoc: vi.fn(),
+  doc: vi.fn(),
+  getFirestore: vi.fn()
+}));
+
+vi.mock('firebase/app', () => ({
+  initializeApp: vi.fn()
+}));
+
 import { useProgress } from '../hooks/useProgress';
-import { onAuthStateChanged } from 'firebase/auth';
-import { onSnapshot, setDoc } from 'firebase/firestore';
 
 describe('useProgress Hook', () => {
   beforeEach(() => {
