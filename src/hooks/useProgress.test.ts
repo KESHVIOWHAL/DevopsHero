@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Firebase modules before importing useProgress
 vi.mock('firebase/auth', () => ({
-  onAuthStateChanged: vi.fn(),
+  onAuthStateChanged: vi.fn(() => vi.fn()), // Return unsubscribe function
   GoogleAuthProvider: vi.fn(function() {
     this.setCustomParameters = vi.fn();
   }),
@@ -11,7 +11,7 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  onSnapshot: vi.fn(),
+  onSnapshot: vi.fn(() => vi.fn()), // Return unsubscribe function
   setDoc: vi.fn(),
   doc: vi.fn(),
   getFirestore: vi.fn()
@@ -54,7 +54,7 @@ describe('useProgress Hook', () => {
     expect(result.current.user?.uid).toBe('test-user');
   });
 
-  it('should not update progress if not logged in', async () => {
+  it('should save progress locally if not logged in', async () => {
     const { result } = renderHook(() => useProgress());
     
     await act(async () => {
@@ -62,6 +62,7 @@ describe('useProgress Hook', () => {
     });
 
     expect(setDoc).not.toHaveBeenCalled();
-    expect(result.current.progress.points).toBe(0);
+    expect(result.current.progress.points).toBe(10);
+    expect(result.current.progress.completedLessons).toContain('lesson-1');
   });
 });
