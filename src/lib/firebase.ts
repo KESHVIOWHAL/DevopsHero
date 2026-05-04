@@ -15,11 +15,9 @@ googleProvider.setCustomParameters({
 
 // For development, we might need to use auth emulator or configure properly
 if (window.location.hostname === 'localhost') {
-  // Configure auth settings for localhost
-  auth.settings = {
-    ...auth.settings,
-    // Allow localhost for development
-  };
+  // Note: auth.settings is read-only in newer Firebase versions
+  // Using default localhost configuration
+  console.log('Firebase Auth configured for localhost');
 }
 
 export const signInWithGoogle = async () => {
