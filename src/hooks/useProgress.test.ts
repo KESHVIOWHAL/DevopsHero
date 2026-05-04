@@ -20,6 +20,9 @@ vi.mock('firebase/app', () => ({
   initializeApp: vi.fn()
 }));
 
+// Import the mocked modules for use in tests
+import { onAuthStateChanged } from 'firebase/auth';
+import { setDoc } from 'firebase/firestore';
 import { useProgress } from '../hooks/useProgress';
 
 describe('useProgress Hook', () => {
